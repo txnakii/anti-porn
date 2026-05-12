@@ -1,0 +1,102 @@
+# PornBlocker - Full Protection
+
+A self-control tool with 5 layers of blocking, a watchdog repair system, and a date lock.
+
+---
+
+## What It Blocks
+
+| Layer | Method | Details |
+|---|---|---|
+| **Porn sites** | hosts file | 60+ domains → `0.0.0.0` |
+| **NSFW subreddits** | hosts file | old.reddit.com + 20 NSFW subreddit paths |
+| **Keywords** | Windows Registry | 30+ keywords → Parental Controls filter |
+| **Apps** | Process killer | Kills blocked .exe files every 30 sec |
+| **DoH bypasses** | Registry + hosts | Disables DNS-over-HTTPS in Chrome/Edge/Firefox/Brave; blocks DoH provider domains |
+| **Safe Search** | Registry policy | Forces Google Safe Search + YouTube Restricted Mode |
+
+---
+
+## Files
+
+| File | Purpose |
+|---|---|
+| `blocker_service.py` | Core Windows service — hosts, registry, process killer |
+| `watchdog.py` | Repair script — restores deleted files, restarts stopped service |
+| `install.py` | Installs everything — **run this first** |
+| `uninstall.py` | Removes everything — only works after unlock date |
+
+---
+
+## Installation
+
+### Requirements
+- Python 3.8+ (added to system PATH)
+- Windows 10 / 11
+- Administrator account
+
+### Steps
+1. Put all 4 files in the same folder
+2. Right-click `install.py` → **Run as administrator**
+3. Enter how many days to stay locked (e.g. `30`)
+4. Confirm → done
+
+---
+
+## How the Protection Works
+
+```
+Every 30 seconds (Windows Service):
+  ├─ Re-writes hosts file (sites + NSFW reddit + DoH domains)
+  ├─ Flushes DNS cache
+  └─ Kills any blocked processes (apps)
+
+Every 5 minutes (Windows Service):
+  ├─ Re-applies DoH-disable registry keys (Chrome/Edge/Firefox/Brave)
+  ├─ Re-applies Safe Search registry keys
+  └─ Re-applies keyword filter registry keys
+
+Every 5 minutes (Task Scheduler Watchdog):
+  ├─ If blocker_service.py was deleted → restores from base64 backup
+  ├─ If service was stopped → restarts it
+  ├─ If hosts block is missing → re-applies it
+  └─ Re-applies all registry policies
+```
+
+---
+
+## Attack Resistance
+
+| Attack | Result |
+|---|---|
+| Delete `blocker_service.py` | Watchdog restores it within 5 min |
+| Stop the Windows service | Watchdog restarts it within 5 min |
+| Manually edit hosts file | Service re-writes it within 30 sec |
+| Delete registry keys | Service re-writes them within 5 min |
+| Use DNS-over-HTTPS in browser | Registry policy disables DoH; DoH domains blocked in hosts |
+| Open a blocked app | Process killed within 30 sec |
+| Run `uninstall.py` early | Rejected — shows remaining lock time |
+
+---
+
+## Uninstalling
+
+Right-click `uninstall.py` → **Run as administrator**
+
+Cleans up everything: service, watchdog task, hosts block, registry keys, install directory.
+
+---
+
+## Log File
+
+`C:\ProgramData\PornBlocker\blocker.log`
+
+---
+
+## Notes
+
+- Reddit itself is **not** fully blocked — only `old.reddit.com` and NSFW subreddit paths.
+  Full Reddit blocking would break legitimate use.
+- Some apps in `BLOCKED_PROCESSES` (VLC, MPC-HC) are commented with warnings —
+  remove them from the list in `blocker_service.py` if you use them legitimately.
+- DoH blocking via registry requires the browser to be restarted to take effect.
