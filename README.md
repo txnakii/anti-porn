@@ -1,2 +1,1 @@
-# anti-porn
-Fully open sourced anti porn python script. made for the people who cannot gave up porn and need to force itself
+open-source content filtering tool designed to help users block access to adult and pornographic websites for a user-defined period of time. Its main purpose is to support focus, self-discipline, and healthier digital habits by providing a more persistent filtering system than traditional browser extensions.
